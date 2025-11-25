@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using TMPro;
 using NUnit.Framework;
+// using System;
 public enum CatState
 {
     Idle,
@@ -33,6 +34,9 @@ public class CatManager : MonoBehaviour
     public Canvas chatCanvas;
     public TextMeshProUGUI chatText;
     public float chatDuration = 0.5f;
+    public string message_before_guide = "Becareful!";
+    public string message_during_guide = "Follow me!";
+    public string message_finish_guide = "Here!";
 
     private Coroutine chatCoroutine;
     private Camera mainCamera;
@@ -78,9 +82,23 @@ public class CatManager : MonoBehaviour
     public void SetGuideTarget(Transform target)
     {
         guideTarget = target;
+        
+        //Wait for 2s before starting to guide
+        Invoke("startGuiding", 2f);
+    }
+    public void SetGuideMessage(string guidemessage)
+    {
+        string[] messages = guidemessage.Split('|');
+        message_before_guide = messages.Length > 0 ? messages[0] : "Becareful!";
+        message_during_guide = messages.Length > 1 ? messages[1] : "Follow me!";
+        message_finish_guide = messages.Length > 2 ? messages[2] : "Here!";
+        ShowChat(message_before_guide, 2f);
+
+    }
+    private void startGuiding()
+    {
         SetState(CatState.Guide);
         navMeshAgent.SetDestination(guideTarget.position);
-
     }
     public void SetFollowState()
     {
@@ -107,7 +125,7 @@ public class CatManager : MonoBehaviour
         navMeshAgent.isStopped = true;
         navMeshAgent.ResetPath();
         //LookAtPlayer();
-
+        ShowChat(message_finish_guide,2f);
         // Optionally add subtle idle animation blending
         catAnimator.SetFloat("Forward", 0f);
         catAnimator.SetFloat("Turn", 0f);
@@ -116,7 +134,14 @@ public class CatManager : MonoBehaviour
     void UpdateGuideBehavior(float distanceToPlayer)
     {
         if (guideTarget == null) return;
+        waitTimer += Time.deltaTime;
 
+        // If waited too long
+        if (waitTimer > maxWaitTime)
+        {
+            ShowChat(message_during_guide, 2f);
+            waitTimer = 0f; // reset timer so it doesn’t spam
+        }
         // If player is too far, wait
         if (distanceToPlayer > guideThreshold)
         {
@@ -130,9 +155,8 @@ public class CatManager : MonoBehaviour
         {
             navMeshAgent.isStopped = true;
             LookAtPlayer();
-            ShowChat("Hide here!", 2f); // 👈 show message when arrived
+            //ShowChat("Hide here!", 2f);
             SetState(CatState.Wait);
-            guideTarget = null;    // optional: switch to Idle after arriving
             return;
         }
 
@@ -147,14 +171,16 @@ public class CatManager : MonoBehaviour
         {
             nextOffsetUpdateTime = Time.time + offsetUpdateInterval;
             followOffset = new Vector3(
-                Random.Range(-followThreshold, followThreshold),
+                Random.Range(-followThreshold/4, followThreshold/4),
                 0,
-                Random.Range(-followThreshold, followThreshold)
+                Random.Range(-followThreshold/4, followThreshold/4)
             );
         }
-
+        Vector3 flatPlayerForward = player.transform.forward;
+        flatPlayerForward.y = 0;
+        flatPlayerForward.Normalize();
         // Compute intended target (around player)
-        Vector3 desiredTarget = player.transform.position + player.transform.forward * followThreshold + followOffset;
+        Vector3 desiredTarget = player.transform.position + flatPlayerForward * followThreshold*3/4 + followOffset;
 
         // Direction from cat to target
         Vector3 dirToTarget = (desiredTarget - transform.position).normalized;
@@ -193,22 +219,31 @@ public class CatManager : MonoBehaviour
         // If waited too long
         if (waitTimer > maxWaitTime)
         {
-            ShowChat((guideTarget!=null)?"Follow me! Hurry up!":"Hide here!", 2f);
+            ShowChat(message_during_guide + " Hurry up!", 2f);
             waitTimer = 0f; // reset timer so it doesn’t spam
         }
-        
-        // If player comes close, resume guiding
-        if (distanceToPlayer < guideThreshold/2 && guideTarget != null)
+        if (Vector3.Distance(player.transform.position, guideTarget.position) < 2)
         {
-            navMeshAgent.isStopped = false;
-            navMeshAgent.SetDestination(guideTarget.position);
-            SetState(CatState.Guide);
+            SetState(CatState.Idle);
+            guideTarget = null; 
+            navMeshAgent.isStopped = true;
+            return;
+        }
+        // If player comes close, resume guiding
+        if (distanceToPlayer < guideThreshold/2 && guideTarget != null &&Vector3.Distance(transform.position, guideTarget.position)>1 )
+        {
+            
             LookAtTarget();
+            SetState(CatState.Guide);
+            navMeshAgent.SetDestination(guideTarget.position);
+            navMeshAgent.isStopped = false;
+            
         }
         else
         {
             LookAtPlayer();
         }
+        
     }
     void UpdateAnimation()
     {
@@ -266,7 +301,8 @@ public class CatManager : MonoBehaviour
         if (lookDir.magnitude > 0.1f)
         {
             Quaternion targetRot = Quaternion.LookRotation(lookDir);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 2f);
+            // transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime);
+            transform.rotation = targetRot;
         }
     }
     
