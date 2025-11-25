@@ -35,12 +35,12 @@ ModelImporter:
     bakeSimulation: 0
     resampleCurves: 1
     optimizeGameObjects: 0
-    motionNodeName: 
-    rigImportErrors: 
-    rigImportWarnings: 
-    animationImportErrors: 
-    animationImportWarnings: 
-    animationRetargetingWarnings: 
+    motionNodeName:
+    rigImportErrors:
+    rigImportWarnings:
+    animationImportErrors:
+    animationImportWarnings:
+    animationRetargetingWarnings:
     animationDoRetargetingWarnings: 0
     animationCompression: 1
     animationRotationError: 0.5
@@ -50,7 +50,7 @@ ModelImporter:
     extraExposedTransformPaths: []
     extraUserProperties: []
     clipAnimations: []
-    isReadable: 0
+    isReadable: 1
   meshes:
     lODScreenPercentages: []
     globalScale: 1
@@ -89,7 +89,7 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
-    rootMotionBoneName: 
+    rootMotionBoneName:
     rootMotionBoneRotation: {x: 0, y: 0, z: 0, w: 1}
     hasTranslationDoF: 0
     hasExtraRoot: 0
@@ -98,6 +98,6 @@ ModelImporter:
   animationType: 0
   humanoidOversampling: 1
   additionalBone: 0
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
+  userData:
+  assetBundleName:
+  assetBundleVariant:
