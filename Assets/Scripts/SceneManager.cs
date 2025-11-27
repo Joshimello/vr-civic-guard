@@ -8,6 +8,12 @@ public class SceneManager : MonoBehaviour
 {
     [Header("References")]
     public Volume postProcessVolume;
+    public GameObject spawnPoint;
+    public GameObject player;
+
+    [Header("Spawn Settings")]
+    public bool setLookDirection = true;
+    public float defaultLookDirection = 180f; // Look behind
 
     [Header("Fade Settings")]
     public float fadeInDuration = 1f;
@@ -54,6 +60,9 @@ public class SceneManager : MonoBehaviour
                 // Start with vignette at fade start position and intensity
                 vignette.center.Override(fadeStartCenter);
                 vignette.intensity.Override(fadeStartIntensity);
+
+                // Teleport player to spawn point
+                TeleportPlayerToSpawnPoint();
 
                 // Fade in on scene start
                 StartFadeIn();
@@ -178,6 +187,32 @@ public class SceneManager : MonoBehaviour
 
     // Utility properties
     public bool IsFading => isFading;
+
+    private void TeleportPlayerToSpawnPoint()
+    {
+        if (player != null && spawnPoint != null)
+        {
+            Vector3 playerPosition = player.transform.position;
+            Vector3 spawnPosition = spawnPoint.transform.position;
+
+            // Keep player's Y position, only change X and Z
+            player.transform.position = new Vector3(spawnPosition.x, playerPosition.y, spawnPosition.z);
+
+            // Set default look direction if enabled
+            if (setLookDirection)
+            {
+                Vector3 currentRotation = player.transform.eulerAngles;
+                player.transform.rotation = Quaternion.Euler(currentRotation.x, defaultLookDirection, currentRotation.z);
+            }
+        }
+        else
+        {
+            if (player == null)
+                Debug.LogWarning("SceneManager: Player GameObject not assigned!");
+            if (spawnPoint == null)
+                Debug.LogWarning("SceneManager: SpawnPoint GameObject not assigned!");
+        }
+    }
 
     void OnDestroy()
     {
