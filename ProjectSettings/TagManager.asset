@@ -11,6 +11,7 @@ TagManager:
   - Fracture3
   - Fracture4
   - Fracture5
+  - FractureCollider
   layers:
   - Default
   - TransparentFX
