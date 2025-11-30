@@ -21,8 +21,8 @@ public class VignetteShaker : MonoBehaviour
     public float vignetteIntensity = 0.5f;
 
     private Vignette vignette;
-    private Vector2 originalCenter;
-    private float originalIntensity;
+    private Vector2 defaultCenter = new Vector2(0.5f, 0.5f);
+    private float defaultIntensity = 0.3f;
     private bool isShaking = false;
     private float noiseOffsetX;
     private float noiseOffsetY;
@@ -42,12 +42,7 @@ public class VignetteShaker : MonoBehaviour
         // Get the vignette component
         if (postProcessVolume != null && postProcessVolume.profile != null)
         {
-            if (postProcessVolume.profile.TryGet<Vignette>(out vignette))
-            {
-                originalCenter = vignette.center.value;
-                originalIntensity = vignette.intensity.value;
-            }
-            else
+            if (!postProcessVolume.profile.TryGet<Vignette>(out vignette))
             {
                 Debug.LogError("VignetteShaker: No Vignette found in the post-process profile!");
             }
@@ -104,19 +99,19 @@ public class VignetteShaker : MonoBehaviour
             );
 
             // Apply the shake to vignette center
-            vignette.center.value = originalCenter + shakeOffset;
+            vignette.center.value = defaultCenter + shakeOffset;
 
-            // Apply intensity animation (stronger at the beginning, fading back to original)
-            float targetIntensity = originalIntensity + (vignetteIntensity * currentIntensity);
+            // Apply intensity animation (stronger at the beginning, fading back to default)
+            float targetIntensity = defaultIntensity + (vignetteIntensity * currentIntensity);
             vignette.intensity.value = targetIntensity;
 
             elapsedTime += Time.deltaTime;
             yield return null;
         }
 
-        // Reset to original position and intensity
-        vignette.center.value = originalCenter;
-        vignette.intensity.value = originalIntensity;
+        // Reset to default position and intensity
+        vignette.center.value = defaultCenter;
+        vignette.intensity.value = defaultIntensity;
         isShaking = false;
     }
 
@@ -127,8 +122,8 @@ public class VignetteShaker : MonoBehaviour
             StopAllCoroutines();
             if (vignette != null)
             {
-                vignette.center.value = originalCenter;
-                vignette.intensity.value = originalIntensity;
+                vignette.center.value = defaultCenter;
+                vignette.intensity.value = defaultIntensity;
             }
             isShaking = false;
         }
@@ -139,8 +134,8 @@ public class VignetteShaker : MonoBehaviour
         // Ensure vignette is reset when object is destroyed
         if (vignette != null)
         {
-            vignette.center.value = originalCenter;
-            vignette.intensity.value = originalIntensity;
+            vignette.center.value = defaultCenter;
+            vignette.intensity.value = defaultIntensity;
         }
     }
 

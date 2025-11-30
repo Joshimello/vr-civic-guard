@@ -8,6 +8,10 @@ TagManager:
   - Projectile
   - Fracture1
   - Fracture2
+  - Fracture3
+  - Fracture4
+  - Fracture5
+  - FractureCollider
   layers:
   - Default
   - TransparentFX

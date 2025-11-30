@@ -24,6 +24,7 @@ public class ExplodeManager : MonoBehaviour
 
     void Start()
     {
+        periodicExplosions = false; // Ensure default is false
         if (periodicExplosions)
         {
             nextExplosionTime = Time.time + Random.Range(explosionIntervalMin, explosionIntervalMax);
@@ -87,5 +88,19 @@ public class ExplodeManager : MonoBehaviour
 
         int randomIndex = Random.Range(0, explosionPoints.Length);
         SpawnExplosion(randomIndex);
+    }
+
+    public void StartPeriodicExplosions()
+    {
+        if (!periodicExplosions)
+        {
+            periodicExplosions = true;
+            nextExplosionTime = Time.time + Random.Range(explosionIntervalMin, explosionIntervalMax);
+        }
+    }
+
+    public void StopPeriodicExplosions()
+    {
+        periodicExplosions = false;
     }
 }
