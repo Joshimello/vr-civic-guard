@@ -28,6 +28,7 @@ public class SceneManager : MonoBehaviour
 
     private Vignette vignette;
     private bool isFading = false;
+    private bool shouldFadeInOnSceneLoad = false;
 
     // Static instance for easy access
     public static SceneManager Instance { get; private set; }
@@ -42,14 +43,54 @@ public class SceneManager : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        // Subscribe to scene loaded event
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     void Start()
     {
-        // Try to find post process volume if not assigned
+        // Initial setup when the SceneManager is first created
+        SetupVignetteAndFadeIn();
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // This is called every time a new scene is loaded
+        // We need a small delay to ensure all objects in the new scene are initialized
+        StartCoroutine(SetupSceneAfterLoad());
+    }
+
+    private IEnumerator SetupSceneAfterLoad()
+    {
+        // Wait one frame to ensure all objects are initialized
+        yield return null;
+
+        SetupVignetteAndFadeIn();
+    }
+
+    private void SetupVignetteAndFadeIn()
+    {
+        // Try to find post process volume if not assigned or if it was destroyed
         if (postProcessVolume == null)
         {
             postProcessVolume = FindObjectOfType<Volume>();
+        }
+
+        // Find player and spawn point in the new scene
+        if (player == null)
+        {
+            // Try to find player by tag or name - adjust as needed for your setup
+            GameObject playerObj = GameObject.FindWithTag("Player");
+            if (playerObj != null)
+            {
+                player = playerObj;
+            }
+        }
+
+        if (spawnPoint == null)
+        {
+            spawnPoint = GameObject.FindWithTag("SpawnPoint"); // Adjust tag as needed
         }
 
         // Get the vignette component
@@ -110,7 +151,7 @@ public class SceneManager : MonoBehaviour
         // Load the new scene
         UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
 
-        // Note: Fade in will happen automatically in Start() of the new scene
+        // Note: Fade in will happen automatically in OnSceneLoaded callback
     }
 
     private IEnumerator ChangeSceneWithFade(int sceneIndex)
@@ -121,7 +162,7 @@ public class SceneManager : MonoBehaviour
         // Load the new scene
         UnityEngine.SceneManagement.SceneManager.LoadScene(sceneIndex);
 
-        // Note: Fade in will happen automatically in Start() of the new scene
+        // Note: Fade in will happen automatically in OnSceneLoaded callback
     }
 
     private IEnumerator FadeVignette(Vector2 startCenter, float startIntensity, Vector2 endCenter, float endIntensity, float duration)
@@ -216,6 +257,9 @@ public class SceneManager : MonoBehaviour
 
     void OnDestroy()
     {
+        // Unsubscribe from scene loaded event
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded -= OnSceneLoaded;
+
         if (Instance == this)
         {
             Instance = null;
