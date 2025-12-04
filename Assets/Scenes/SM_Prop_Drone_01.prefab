@@ -99,14 +99,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 169175621218927079}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9da13f08e2f172c4498d6b122ed4248c, type: 3}
+  m_Script: {fileID: 11500000, guid: 8ba03bd0fdb3d7b47ab64ea588cff254, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RadarSectorVisual
-  radius: 5
-  angle: 120
+  radius: 20
+  angle: 150
   segments: 40
   heightOffset: 0.02
-  drone: {fileID: 2284432081461319629}
+  drone: {fileID: 4098307372095694147, guid: 2dc76b423fcfe774db7ea9bf76ab9af8, type: 3}
   groundY: 0
   forwardDistance: 5
   tiltAngle: 30
@@ -154,15 +154,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 977278236014285188}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9e2cf4396157d79449602b9400b51c2e, type: 3}
+  m_Script: {fileID: 11500000, guid: d35f1e502e9062942a5ef51ba17abf59, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SectorDetector
   visualSector: {fileID: 3173244831603913164}
-  radius: 15
-  angle: 80
+  radius: 10
+  angle: 120
   detectMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 0
+  sectorRenderer: {fileID: 4162132742471572808}
+  safeColor: {r: 1, g: 0.645902, b: 0, a: 0.3}
+  alertColor: {r: 1, g: 0, b: 0, a: 0.5}
 --- !u!1 &4322628659843394092
 GameObject:
   m_ObjectHideFlags: 0
@@ -255,7 +258,7 @@ AudioListener:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4322628659843394092}
-  m_Enabled: 0
+  m_Enabled: 1
 --- !u!114 &7356717593146425459
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -391,9 +394,17 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: 1a9025f6a0fb8104496613f6571d4031, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: c37eaa74936027945bcfbb3858898a8f, type: 2}
     - target: {fileID: 919132149155446097, guid: 1a9025f6a0fb8104496613f6571d4031, type: 3}
       propertyPath: m_Name
       value: SM_Prop_Drone_01
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 1a9025f6a0fb8104496613f6571d4031, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
@@ -414,14 +425,17 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1a9025f6a0fb8104496613f6571d4031, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 974483577594230349}
+      addedObject: {fileID: 4713576640522247093}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 1a9025f6a0fb8104496613f6571d4031, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 928620053279354732}
   m_SourcePrefab: {fileID: 100100000, guid: 1a9025f6a0fb8104496613f6571d4031, type: 3}
 --- !u!1 &1511026340566027639 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 1a9025f6a0fb8104496613f6571d4031, type: 3}
   m_PrefabInstance: {fileID: 1745522686425002022}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &974483577594230349
+--- !u!114 &4713576640522247093
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -430,15 +444,33 @@ MonoBehaviour:
   m_GameObject: {fileID: 1511026340566027639}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0e88be6c82c90fc4493e875cecb95f5a, type: 3}
+  m_Script: {fileID: 11500000, guid: 46d3e3aadda23c046bb6be5cfef67cd6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DronePathFollowing
-  waypoints:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  waypoints: []
   speed: 5
   rotationSpeed: 2
+--- !u!114 &928620053279354732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1511026340566027639}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d35f1e502e9062942a5ef51ba17abf59, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SectorDetector
+  visualSector: {fileID: 0}
+  radius: 10
+  angle: 120
+  detectMask:
+    serializedVersion: 2
+    m_Bits: 0
+  sectorRenderer: {fileID: 0}
+  safeColor: {r: 1, g: 0.7049509, b: 0, a: 0.3}
+  alertColor: {r: 1, g: 0, b: 0, a: 0.5}
 --- !u!4 &2284432081461319629 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 1a9025f6a0fb8104496613f6571d4031, type: 3}
