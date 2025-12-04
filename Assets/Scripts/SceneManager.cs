@@ -29,6 +29,8 @@ public class SceneManager : MonoBehaviour
     private Vignette vignette;
     private bool isFading = false;
     private bool shouldFadeInOnSceneLoad = false;
+    private Color currentHealthColor;
+    private float currentHealthIntensity;
 
     // Static instance for easy access
     public static SceneManager Instance { get; private set; }
@@ -98,9 +100,22 @@ public class SceneManager : MonoBehaviour
         {
             if (postProcessVolume.profile.TryGet<Vignette>(out vignette))
             {
+                // Store current health-based state before fading
+                if (HealthManager.Instance != null)
+                {
+                    currentHealthColor = vignette.color.value;
+                    currentHealthIntensity = vignette.intensity.value;
+                }
+                else
+                {
+                    currentHealthColor = Color.black;
+                    currentHealthIntensity = defaultIntensity;
+                }
+
                 // Start with vignette at fade start position and intensity
                 vignette.center.Override(fadeStartCenter);
                 vignette.intensity.Override(fadeStartIntensity);
+                vignette.color.Override(Color.black); // Always fade with black
 
                 // Teleport player to spawn point
                 TeleportPlayerToSpawnPoint();
@@ -123,7 +138,19 @@ public class SceneManager : MonoBehaviour
     {
         if (vignette != null && !isFading)
         {
-            StartCoroutine(FadeVignette(fadeStartCenter, fadeStartIntensity, defaultCenter, defaultIntensity, fadeInDuration));
+            // Get current health state for fade target
+            Vector2 targetCenter = defaultCenter;
+            float targetIntensity = defaultIntensity;
+            Color targetColor = Color.black;
+
+            if (HealthManager.Instance != null)
+            {
+                targetIntensity = HealthManager.Instance.GetCurrentBaseIntensity();
+                targetColor = currentHealthColor;
+            }
+
+            StartCoroutine(FadeVignetteWithColor(fadeStartCenter, fadeStartIntensity, Color.black,
+                                               targetCenter, targetIntensity, targetColor, fadeInDuration));
         }
     }
 
@@ -145,8 +172,20 @@ public class SceneManager : MonoBehaviour
 
     private IEnumerator ChangeSceneWithFade(string sceneName)
     {
+        // Get current health state for fade start
+        Vector2 startCenter = defaultCenter;
+        float startIntensity = defaultIntensity;
+        Color startColor = Color.black;
+
+        if (HealthManager.Instance != null)
+        {
+            startIntensity = HealthManager.Instance.GetCurrentBaseIntensity();
+            startColor = vignette.color.value;
+        }
+
         // Fade out (vignette to fade start position and intensity)
-        yield return StartCoroutine(FadeVignette(defaultCenter, defaultIntensity, fadeStartCenter, fadeStartIntensity, fadeOutDuration));
+        yield return StartCoroutine(FadeVignetteWithColor(startCenter, startIntensity, startColor,
+                                                        fadeStartCenter, fadeStartIntensity, Color.black, fadeOutDuration));
 
         // Load the new scene
         UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
@@ -156,8 +195,20 @@ public class SceneManager : MonoBehaviour
 
     private IEnumerator ChangeSceneWithFade(int sceneIndex)
     {
+        // Get current health state for fade start
+        Vector2 startCenter = defaultCenter;
+        float startIntensity = defaultIntensity;
+        Color startColor = Color.black;
+
+        if (HealthManager.Instance != null)
+        {
+            startIntensity = HealthManager.Instance.GetCurrentBaseIntensity();
+            startColor = vignette.color.value;
+        }
+
         // Fade out (vignette to fade start position and intensity)
-        yield return StartCoroutine(FadeVignette(defaultCenter, defaultIntensity, fadeStartCenter, fadeStartIntensity, fadeOutDuration));
+        yield return StartCoroutine(FadeVignetteWithColor(startCenter, startIntensity, startColor,
+                                                        fadeStartCenter, fadeStartIntensity, Color.black, fadeOutDuration));
 
         // Load the new scene
         UnityEngine.SceneManagement.SceneManager.LoadScene(sceneIndex);
@@ -198,6 +249,43 @@ public class SceneManager : MonoBehaviour
         isFading = false;
     }
 
+    private IEnumerator FadeVignetteWithColor(Vector2 startCenter, float startIntensity, Color startColor,
+                                             Vector2 endCenter, float endIntensity, Color endColor, float duration)
+    {
+        if (vignette == null)
+        {
+            Debug.LogWarning("SceneManager: Vignette not available for fade!");
+            yield break;
+        }
+
+        isFading = true;
+        float elapsedTime = 0f;
+
+        while (elapsedTime < duration)
+        {
+            float normalizedTime = elapsedTime / duration;
+            float curveValue = fadeCurve.Evaluate(normalizedTime);
+
+            // Interpolate vignette center, intensity, and color
+            Vector2 currentCenter = Vector2.Lerp(startCenter, endCenter, curveValue);
+            float currentIntensity = Mathf.Lerp(startIntensity, endIntensity, curveValue);
+            Color currentColor = Color.Lerp(startColor, endColor, curveValue);
+
+            vignette.center.Override(currentCenter);
+            vignette.intensity.Override(currentIntensity);
+            vignette.color.Override(currentColor);
+
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        // Ensure we end at the exact target values
+        vignette.center.Override(endCenter);
+        vignette.intensity.Override(endIntensity);
+        vignette.color.Override(endColor);
+        isFading = false;
+    }
+
     public void FadeOut(System.Action onComplete = null)
     {
         if (!isFading)
@@ -208,7 +296,19 @@ public class SceneManager : MonoBehaviour
 
     private IEnumerator FadeOutCoroutine(System.Action onComplete)
     {
-        yield return StartCoroutine(FadeVignette(defaultCenter, defaultIntensity, fadeStartCenter, fadeStartIntensity, fadeOutDuration));
+        // Get current health state for fade start
+        Vector2 startCenter = defaultCenter;
+        float startIntensity = defaultIntensity;
+        Color startColor = Color.black;
+
+        if (HealthManager.Instance != null)
+        {
+            startIntensity = HealthManager.Instance.GetCurrentBaseIntensity();
+            startColor = vignette.color.value;
+        }
+
+        yield return StartCoroutine(FadeVignetteWithColor(startCenter, startIntensity, startColor,
+                                                        fadeStartCenter, fadeStartIntensity, Color.black, fadeOutDuration));
         onComplete?.Invoke();
     }
 
@@ -222,7 +322,19 @@ public class SceneManager : MonoBehaviour
 
     private IEnumerator FadeInCoroutine(System.Action onComplete)
     {
-        yield return StartCoroutine(FadeVignette(fadeStartCenter, fadeStartIntensity, defaultCenter, defaultIntensity, fadeInDuration));
+        // Get current health state for fade target
+        Vector2 targetCenter = defaultCenter;
+        float targetIntensity = defaultIntensity;
+        Color targetColor = Color.black;
+
+        if (HealthManager.Instance != null)
+        {
+            targetIntensity = HealthManager.Instance.GetCurrentBaseIntensity();
+            targetColor = currentHealthColor;
+        }
+
+        yield return StartCoroutine(FadeVignetteWithColor(fadeStartCenter, fadeStartIntensity, Color.black,
+                                                        targetCenter, targetIntensity, targetColor, fadeInDuration));
         onComplete?.Invoke();
     }
 

@@ -68,8 +68,16 @@ public class ExplodeManager : MonoBehaviour
 
         Vector3 position = explosionPoints[index].transform.position;
 
-        if (vignetteShaker != null)
+        // Use health-based shake if HealthManager is available
+        if (HealthManager.Instance != null)
+        {
+            HealthManager.Instance.ApplyExplosionShake(shakeDuration, shakeMagnitude);
+        }
+        else if (vignetteShaker != null)
+        {
+            // Fallback to direct shake if no health manager
             vignetteShaker.StartShake(shakeDuration, shakeMagnitude);
+        }
 
         if (cameraShaker != null)
             cameraShaker.StartShake();

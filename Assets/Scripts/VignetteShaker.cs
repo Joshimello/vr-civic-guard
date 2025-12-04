@@ -26,6 +26,8 @@ public class VignetteShaker : MonoBehaviour
     private bool isShaking = false;
     private float noiseOffsetX;
     private float noiseOffsetY;
+    private Color originalColor;
+    private float healthBasedIntensity;
 
     void Start()
     {
@@ -79,6 +81,12 @@ public class VignetteShaker : MonoBehaviour
         isShaking = true;
         float elapsedTime = 0f;
 
+        // Store original color to preserve it during shake
+        if (vignette != null)
+        {
+            originalColor = vignette.color.value;
+        }
+
         while (elapsedTime < shakeDuration)
         {
             float normalizedTime = elapsedTime / shakeDuration;
@@ -105,6 +113,9 @@ public class VignetteShaker : MonoBehaviour
             float targetIntensity = defaultIntensity + (vignetteIntensity * currentIntensity);
             vignette.intensity.value = targetIntensity;
 
+            // Preserve the original color throughout the shake
+            vignette.color.Override(originalColor);
+
             elapsedTime += Time.deltaTime;
             yield return null;
         }
@@ -124,6 +135,8 @@ public class VignetteShaker : MonoBehaviour
             {
                 vignette.center.value = defaultCenter;
                 vignette.intensity.value = defaultIntensity;
+                // Restore original color
+                vignette.color.Override(originalColor);
             }
             isShaking = false;
         }
@@ -137,6 +150,74 @@ public class VignetteShaker : MonoBehaviour
             vignette.center.value = defaultCenter;
             vignette.intensity.value = defaultIntensity;
         }
+    }
+
+    // New method for health-based shake that preserves current health state
+    public void ApplyHealthBasedShake(float duration, float magnitude, float baseIntensity)
+    {
+        if (vignette != null && !isShaking)
+        {
+            // Store the current health-based intensity and use it as the base
+            healthBasedIntensity = baseIntensity;
+            defaultIntensity = baseIntensity;
+
+            // Start shake with health-adjusted parameters
+            shakeDuration = duration;
+            initialIntensity = magnitude;
+            StartCoroutine(HealthBasedShakeCoroutine());
+        }
+    }
+
+    private IEnumerator HealthBasedShakeCoroutine()
+    {
+        isShaking = true;
+        float elapsedTime = 0f;
+
+        // Store original color and intensity to preserve health state
+        if (vignette != null)
+        {
+            originalColor = vignette.color.value;
+            healthBasedIntensity = vignette.intensity.value;
+        }
+
+        while (elapsedTime < shakeDuration)
+        {
+            float normalizedTime = elapsedTime / shakeDuration;
+            float currentIntensity = initialIntensity * intensityCurve.Evaluate(normalizedTime);
+
+            // Generate Perlin noise for smooth random movement
+            float noiseX = Mathf.PerlinNoise((Time.time * shakeSpeed) + noiseOffsetX, 0f);
+            float noiseY = Mathf.PerlinNoise(0f, (Time.time * shakeSpeed) + noiseOffsetY);
+
+            // Convert noise from 0-1 to -1 to 1 range
+            noiseX = (noiseX - 0.5f) * 2f;
+            noiseY = (noiseY - 0.5f) * 2f;
+
+            // Apply intensity and max offset
+            Vector2 shakeOffset = new Vector2(
+                noiseX * currentIntensity * maxOffset,
+                noiseY * currentIntensity * maxOffset
+            );
+
+            // Apply the shake to vignette center
+            vignette.center.value = defaultCenter + shakeOffset;
+
+            // Apply intensity relative to health-based intensity
+            float targetIntensity = healthBasedIntensity + (vignetteIntensity * currentIntensity);
+            vignette.intensity.value = targetIntensity;
+
+            // Preserve the health-based color throughout the shake
+            vignette.color.Override(originalColor);
+
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        // Reset to health-based position, intensity, and color
+        vignette.center.value = defaultCenter;
+        vignette.intensity.value = healthBasedIntensity;
+        vignette.color.Override(originalColor);
+        isShaking = false;
     }
 
     public bool IsShaking => isShaking;

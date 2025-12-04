@@ -244,13 +244,7 @@ public class CatManager : MonoBehaviour
             ShowChat(message_during_guide + " Hurry up!", 2f);
             waitTimer = 0f; // reset timer so it doesn’t spam
         }
-        if (Vector3.Distance(player.transform.position, guideTarget.position) < 2)
-        {
-            SetState(CatState.Idle);
-            guideTarget = null;
-            navMeshAgent.isStopped = true;
-            return;
-        }
+        // Removed automatic state change - now requires manual function call
         // If player comes close, resume guiding
         if (distanceToPlayer < guideThreshold / 2 && guideTarget != null && Vector3.Distance(transform.position, guideTarget.position) > 1)
         {
@@ -350,5 +344,17 @@ public class CatManager : MonoBehaviour
     public void ShowChatDefault(string message)
     {
         ShowChat(message, 2.0f);
+    }
+
+    // Manual function to complete the guiding task
+    public void CompleteGuiding()
+    {
+        if (currentState == CatState.Wait || currentState == CatState.Guide)
+        {
+            SetState(CatState.Idle);
+            guideTarget = null;
+            navMeshAgent.isStopped = true;
+            ShowChat(message_finish_guide, 2f);
+        }
     }
 }
