@@ -333,7 +333,6 @@ public class CatManager : MonoBehaviour
         if (chatText)
         {
             chatText.text = message;
-            chatText.color = Color.black;
             chatText.gameObject.SetActive(true);
         }
         yield return new WaitForSeconds(chatDuration);
