@@ -27,6 +27,7 @@ public class RadarSectorVisual : MonoBehaviour
     public FindYouUI ui;
 
     private Mesh mesh;
+    private bool lastDetected = false;   // 上一幀有沒有偵測到玩家
 
     void Awake()
     {
@@ -51,20 +52,28 @@ public class RadarSectorVisual : MonoBehaviour
         transform.rotation = Quaternion.Euler(0f, drone.eulerAngles.y, 0f);
 
         // --- 偵測邏輯 ---
+        bool detected = false;
+
         if (detector != null && playerTarget != null)
         {
-            bool found = detector.DetectTarget(playerTarget);
+            detected = detector.DetectTarget(playerTarget);
 
-            if (found)
+            if (detected)
             {
                 Debug.Log("Find Player");
-                if (ui != null) ui.ShowMessage();
-            }
-            else
-            {
-                if (ui != null) ui.HideMessage();
             }
         }
+
+        // --- UI：只在狀態「變化」時通知（避免多台互相搶 Show/Hide） ---
+        if (ui != null && detected != lastDetected)
+        {
+            if (detected)
+                ui.DroneEnterDetect();   // 這台無人機剛進入偵測狀態
+            else
+                ui.DroneExitDetect();    // 這台無人機剛離開偵測狀態
+        }
+
+        lastDetected = detected;
     }
 
     void OnValidate()
