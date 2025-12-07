@@ -3,25 +3,28 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class RadarSectorVisual : MonoBehaviour
 {
+    [Header("3D 掃描高度")]
+    public float coneHeight = 3f;  // 會在 LateUpdate 裡自動更新
+
     [Header("扇形設定")]
-    public float radius = 10f;      
+    public float radius = 10f;
     [Range(1f, 360f)]
-    public float angle = 120f;      
-    public int segments = 40;       
-    public float heightOffset = 0.02f;
+    public float angle = 120f;
+    public int segments = 40;
+    public float heightOffset = 0.02f; // 控制圓錐的基礎高度（避免完全貼地）
 
     [Header("跟隨無人機")]
-    public Transform drone;               // 指向無人機
-    public float groundY = 0f;            // 地板高度
+    public Transform drone;   // 指向無人機
+    public float groundY = 0f; // 地板高度
 
-    [Header("扇形位置偏移設定")]
-    public float forwardDistance = 5f;    // 扇形中心與無人機水平距離
-    public float tiltAngle = 30f;         // 想要往上偏 30°（投射到地面）
+    [Header("扇形位置偏移設定（之後想做前方偏移可以用）")]
+    public float forwardDistance = 5f;
+    public float tiltAngle = 30f;
+
+    [Header("偵測 & UI")]
     public SectorDetector detector;
-    public Transform playerTarget;   // 指向 Cube
+    public Transform playerTarget; // 目標（例如玩家或 Cube）
     public FindYouUI ui;
-
-
 
     private Mesh mesh;
 
@@ -37,26 +40,22 @@ public class RadarSectorVisual : MonoBehaviour
     {
         if (drone == null) return;
 
-        // --- Step 1. 計算 30 度斜前方方向 ---
-        // 把無人機 forward 往上旋轉 30 度（但最終仍然投射到地板）
-        Quaternion tiltRot = Quaternion.AngleAxis(tiltAngle, drone.right);
+        // 以無人機高度決定錐體高度（無人機到地板的距離）
+        coneHeight = Mathf.Max(0.1f, drone.position.y - groundY);
+        GenerateMesh();
 
-        // 產生斜前方的方向
-        Vector3 tiltedDir = tiltRot * drone.forward;
+        // ✅ 直接把物件放在無人機位置（最上面那層就在無人機身上）
+        transform.position = drone.position;
 
-        // 計算地板上的位置：取 XZ，Y 固定為地板高度
-        Vector3 pos = drone.position + tiltedDir.normalized * forwardDistance;
-        pos.y = groundY;   // 貼地板
-
-        transform.position = pos;
-
-        // --- Step 2. 扇形方向跟著無人機 --
+        // 目前先讓 Y 軸方向跟無人機一致（需要再調 tilt 再改）
         transform.rotation = Quaternion.Euler(0f, drone.eulerAngles.y, 0f);
-        // 偵測物件
-// 單一目標偵測
+
+        // --- 偵測邏輯 ---
         if (detector != null && playerTarget != null)
         {
-            if (detector.DetectTarget(playerTarget))
+            bool found = detector.DetectTarget(playerTarget);
+
+            if (found)
             {
                 Debug.Log("Find Player");
                 if (ui != null) ui.ShowMessage();
@@ -66,9 +65,6 @@ public class RadarSectorVisual : MonoBehaviour
                 if (ui != null) ui.HideMessage();
             }
         }
-
-
-
     }
 
     void OnValidate()
@@ -78,32 +74,53 @@ public class RadarSectorVisual : MonoBehaviour
 
     public void GenerateMesh()
     {
-        int vertexCount = segments + 2;
-        Vector3[] vertices = new Vector3[vertexCount];
-        int[] triangles = new int[segments * 3];
-
-        vertices[0] = new Vector3(0f, heightOffset, 0f);
+        int vCount = (segments + 1) * 2; // 上層 + 下層
+        Vector3[] vertices = new Vector3[vCount];
+        int[] triangles = new int[segments * 6]; // 每段 2 個三角形
 
         float halfAngle = angle * 0.5f;
-        float angleStep = angle / segments;
+        float step = angle / segments;
+        float topRadius = 0.01f;    // 上口小一點，避免尖成 0
+        float bottomRadius = radius;
 
+        // 底部的 y（往下拉 coneHeight，高度再略微抬起 heightOffset）
+        float bottomY = -coneHeight + heightOffset;
+
+        // 建兩層扇形
         for (int i = 0; i <= segments; i++)
         {
-            float currentAngle = -halfAngle + angleStep * i;
-            float rad = currentAngle * Mathf.Deg2Rad;
+            float currentAngle = (-halfAngle + step * i) * Mathf.Deg2Rad;
 
-            float x = Mathf.Sin(rad) * radius;
-            float z = Mathf.Cos(rad) * radius;
+            float xTop = Mathf.Sin(currentAngle) * topRadius;
+            float zTop = Mathf.Cos(currentAngle) * topRadius;
 
-            vertices[i + 1] = new Vector3(x, heightOffset, z);
+            float xBottom = Mathf.Sin(currentAngle) * bottomRadius;
+            float zBottom = Mathf.Cos(currentAngle) * bottomRadius;
+
+            // 🔼 上層：local y = 0，剛好在無人機位置那一層
+            vertices[i] = new Vector3(xTop, 0f, zTop);
+
+            // 🔽 下層：往下延伸到 -coneHeight（接近地板）
+            vertices[i + segments + 1] = new Vector3(xBottom, bottomY, zBottom);
         }
 
+        // 組立側邊三角形（上層與下層之間）
         for (int i = 0; i < segments; i++)
         {
-            int triIndex = i * 3;
-            triangles[triIndex] = 0;
-            triangles[triIndex + 1] = i + 1;
-            triangles[triIndex + 2] = i + 2;
+            int topA = i;
+            int topB = i + 1;
+            int bottomA = i + segments + 1;
+            int bottomB = i + segments + 2;
+
+            int tri = i * 6;
+
+            triangles[tri]     = topA;
+            triangles[tri + 1] = bottomA;
+            triangles[tri + 2] = topB;
+
+            triangles[tri + 3] = topB;
+            triangles[tri + 4] = bottomA;
+            triangles[tri + 5] = bottomB;
         }
 
         mesh.Clear();
