@@ -139,7 +139,7 @@ public class CatManager : MonoBehaviour
         // If player walks away, start following
         if (distanceToPlayer > followThreshold)
         {
-            SetFollowState();
+            //SetFollowState();
             return;
         }
 
