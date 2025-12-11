@@ -17,7 +17,7 @@ public class CatSpeechBalloon : MonoBehaviour
     }
     void SetSpeechBalloonPosition()
     {
-        transform.position = new Vector3(CatTransform.position.x, CatTransform.position.y + 1.0f, CatTransform.position.z);
+        transform.position = new Vector3(CatTransform.position.x, CatTransform.position.y + 3.0f, CatTransform.position.z);
         transform.LookAt(PlayerTransform);
         transform.Rotate(0, 180, 0);
     }
