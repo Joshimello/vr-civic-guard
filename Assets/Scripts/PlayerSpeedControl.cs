@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.XR.Interaction.Toolkit;
@@ -11,6 +12,7 @@ public class PllayerSpeedControl : MonoBehaviour
    [SerializeField] private DynamicMoveProvider dynamicMoveProvider;
     public InputActionReference pressA;
     public InputActionReference pressB;
+    public TextMeshProUGUI speedDisplay;
     // Use a public property or a separate private variable for the current speed
     private float currentMoveSpeed = 1.4f;
     private const float MinSpeed = 1f;
@@ -34,6 +36,9 @@ public class PllayerSpeedControl : MonoBehaviour
             currentMoveSpeed += 0.1f;
             currentMoveSpeed = Mathf.Clamp(currentMoveSpeed, MinSpeed, MaxSpeed);
             Debug.Log("Speed Increased: " + currentMoveSpeed);
+            //show the speed on the text mesh for 1 second
+            speedDisplay.text = "MoveSpeed: " + currentMoveSpeed.ToString("F1");
+            Invoke("ClearSpeedDisplay", 1f);
         }
 
         // Example: Using the "B" button on the right controller to decrease speed
@@ -42,6 +47,12 @@ public class PllayerSpeedControl : MonoBehaviour
             currentMoveSpeed -= 0.1f;
             currentMoveSpeed = Mathf.Clamp(currentMoveSpeed, MinSpeed, MaxSpeed);
             Debug.Log("Speed Decreased: " + currentMoveSpeed);
+            speedDisplay.text = "MoveSpeed: " + currentMoveSpeed.ToString("F1");
+            Invoke("ClearSpeedDisplay", 1f);
         }
+    }
+    private void ClearSpeedDisplay()
+    {
+        speedDisplay.text = "";
     }
 }
